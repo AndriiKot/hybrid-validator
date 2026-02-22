@@ -1,22 +1,59 @@
 {
-  "name": "express-server-api",
-  "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+  "name": "json-schema-validator",
+  "version": "0.1.0",
+  "description": "Lightweight JSON Schema validator for Node.js and modern JavaScript environments",
+
+  "main": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
   },
-  "keywords": [
-    "express",
-    "nodejs"
+
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
   ],
-  "author": "AndriiKot",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "dotenv": "^16.4.5",
-    "express": "^4.21.1",
-    "nodemon": "^3.1.7"
+
+  "scripts": {
+    "lint": "eslint . && prettier -c \"**/*.js\"",
+    "fix": "eslint . --fix && prettier --write \"**/*.js\"",
+    "test": "node --test",
+    "prepublishOnly": "npm run lint && npm test"
+  },
+
+  "keywords": [
+    "json",
+    "json-schema",
+    "validator",
+    "schema-validation",
+    "validation",
+    "json-validator"
+  ],
+
+  "author": "Andrii Kotsiuba",
+  "license": "MIT",
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndriiKot/json-schema-validator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AndriiKot/json-schema-validator/issues"
+  },
+  "homepage": "https://github.com/AndriiKot/json-schema-validator#readme",
+
+  "engines": {
+    "node": ">=18"
+  },
+
+  "private": false,
+
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-metarhia": "^9.1.5",
+    "prettier": "^3.8.1"
   }
 }
