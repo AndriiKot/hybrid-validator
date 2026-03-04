@@ -9,5 +9,16 @@ module.exports = [
     languageOptions: {
       sourceType: 'module',
     },
+    rules: {
+      'max-len': [
+        'error',
+        {
+          code: 100,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+        },
+      ],
+    },
   },
 ];
