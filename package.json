@@ -1,8 +1,7 @@
 {
   "name": "json-schema-validator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lightweight JSON Schema validator for Node.js and modern JavaScript environments",
-
   "main": "./src/index.js",
   "exports": {
     ".": {
@@ -10,13 +9,11 @@
       "default": "./src/index.js"
     }
   },
-
   "files": [
     "src",
     "README.md",
     "LICENSE"
   ],
-
   "scripts": {
     "prepare": "node tools/setGitHooks.js",
     "lint": "eslint . && prettier -c \"**/*.js\"",
@@ -24,7 +21,6 @@
     "test": "node --test",
     "prepublishOnly": "npm run lint && npm test"
   },
-
   "keywords": [
     "json",
     "json-schema",
@@ -33,10 +29,8 @@
     "validation",
     "json-validator"
   ],
-
   "author": "Andrii Kotsiuba",
   "license": "MIT",
-
   "repository": {
     "type": "git",
     "url": "https://github.com/AndriiKot/json-schema-validator.git"
@@ -45,13 +39,10 @@
     "url": "https://github.com/AndriiKot/json-schema-validator/issues"
   },
   "homepage": "https://github.com/AndriiKot/json-schema-validator#readme",
-
   "engines": {
     "node": ">=18"
   },
-
   "private": false,
-
   "devDependencies": {
     "eslint": "^9.39.2",
     "eslint-config-metarhia": "^9.1.5",
