@@ -53,7 +53,10 @@ test('null type validation', () => {
 // ================================
 
 test('valid object', () => {
-  const schema = { type: 'object', properties: { name: { type: 'string' }, age: { type: 'integer' } } };
+  const schema = {
+    type: 'object',
+    properties: { name: { type: 'string' }, age: { type: 'integer' } },
+  };
   const data = { name: 'John', age: 30 };
   const engine = new NativeEngine();
 
@@ -83,7 +86,11 @@ test('nested object', () => {
 });
 
 test('strict mode: additional properties not allowed', () => {
-  const schema = { type: 'object', properties: { name: { type: 'string' } }, additionalProperties: false };
+  const schema = {
+    type: 'object',
+    properties: { name: { type: 'string' } },
+    additionalProperties: false,
+  };
   const data = { name: 'John', age: 30 };
   const engine = new NativeEngine({ strict: true });
 
@@ -93,7 +100,11 @@ test('strict mode: additional properties not allowed', () => {
 });
 
 test('additionalProperties as schema', () => {
-  const schema = { type: 'object', properties: { name: { type: 'string' } }, additionalProperties: { type: 'number' } };
+  const schema = {
+    type: 'object',
+    properties: { name: { type: 'string' } },
+    additionalProperties: { type: 'number' },
+  };
   const data = { name: 'John', age: 30, score: 'bad' };
   const engine = new NativeEngine();
 
@@ -202,7 +213,9 @@ test('custom validator function', () => {
   const schema = { type: 'object', properties: { age: { type: 'integer' } } };
   const customValidators = [
     (data, path, errors) => {
-      if (data.age < 18) errors.push({ path: 'age', message: 'Must be at least 18' });
+      if (data.age < 18) {
+        errors.push({ path: 'age', message: 'Must be at least 18' });
+      }
     },
   ];
   const data = { age: 16 };
