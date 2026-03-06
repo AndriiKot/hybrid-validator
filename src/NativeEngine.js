@@ -16,16 +16,12 @@ export class NativeEngine {
   // ==================================================
   // PUBLIC
   // ==================================================
+
   validate(schema, data) {
     this.errors = [];
 
-    if (schema.type === 'array') {
-      this.#validateArray(schema, data, 'root');
-    } else {
-      this.#validateObject(schema, data);
-    }
+    this.#validateBySchema(schema, data, '');
 
-    // root-level custom validators
     for (const validator of this.customValidators) {
       validator(data, '', this.errors);
     }
@@ -39,6 +35,7 @@ export class NativeEngine {
   // ==================================================
   // TYPE CHECKING
   // ==================================================
+
   #checkType(value, expectedType) {
     if (Array.isArray(expectedType)) {
       return expectedType.some((t) => this.#checkType(value, t));
@@ -51,20 +48,27 @@ export class NativeEngine {
     switch (expectedType) {
       case 'integer':
         return Number.isInteger(value);
+
       case 'number':
         return typeof value === 'number' && Number.isFinite(value);
+
       case 'string':
         return typeof value === 'string';
+
       case 'boolean':
         return typeof value === 'boolean';
+
       case 'array':
         return Array.isArray(value);
+
       case 'object':
         return (
           typeof value === 'object' && value !== null && !Array.isArray(value)
         );
+
       case 'null':
         return value === null;
+
       default:
         return typeof value === expectedType;
     }
@@ -72,6 +76,7 @@ export class NativeEngine {
 
   #typeError(path, expected, value) {
     const actual = Array.isArray(value) ? 'array' : typeof value;
+
     const expectedStr = Array.isArray(expected)
       ? expected.join(', ')
       : expected;
@@ -85,6 +90,7 @@ export class NativeEngine {
   // ==================================================
   // COMMON RULES
   // ==================================================
+
   #validateEnum(value, schema, path) {
     if (schema.enum && !schema.enum.includes(value)) {
       this.errors.push({
@@ -99,7 +105,8 @@ export class NativeEngine {
 
     if (schema.format === 'date-time') {
       const date = new Date(value);
-      if (isNaN(date.getTime())) {
+
+      if (Number.isNaN(date.getTime())) {
         this.errors.push({
           path,
           message: `Value '${value}' is not a valid ISO 8601 date-time`,
@@ -117,6 +124,7 @@ export class NativeEngine {
         message: `Value ${value} is less than minimum ${schema.minimum}`,
       });
     }
+
     if (
       schema.exclusiveMinimum !== undefined &&
       value <= schema.exclusiveMinimum
@@ -126,12 +134,14 @@ export class NativeEngine {
         message: `Value ${value} must be greater than ${schema.exclusiveMinimum}`,
       });
     }
+
     if (schema.maximum !== undefined && value > schema.maximum) {
       this.errors.push({
         path,
         message: `Value ${value} is greater than maximum ${schema.maximum}`,
       });
     }
+
     if (
       schema.exclusiveMaximum !== undefined &&
       value >= schema.exclusiveMaximum
@@ -141,17 +151,23 @@ export class NativeEngine {
         message: `Value ${value} must be less than ${schema.exclusiveMaximum}`,
       });
     }
-    if (schema.multipleOf !== undefined && value % schema.multipleOf !== 0) {
-      this.errors.push({
-        path,
-        message: `Value ${value} is not a multiple of ${schema.multipleOf}`,
-      });
+
+    if (schema.multipleOf !== undefined) {
+      const division = value / schema.multipleOf;
+
+      if (Math.abs(division - Math.round(division)) > Number.EPSILON) {
+        this.errors.push({
+          path,
+          message: `Value ${value} is not a multiple of ${schema.multipleOf}`,
+        });
+      }
     }
   }
 
   #applyCommonRules(value, schema, path) {
     this.#validateEnum(value, schema, path);
     this.#validateFormat(value, schema, path);
+
     if (schema.type === 'number' || schema.type === 'integer') {
       this.#validateNumberRules(value, schema, path);
     }
@@ -160,18 +176,13 @@ export class NativeEngine {
   // ==================================================
   // OBJECT
   // ==================================================
-  #validateObject(schema, data, path = '') {
-    if (schema.type && !this.#checkType(data, schema.type)) {
-      this.#typeError(path, schema.type, data);
-      return;
-    }
 
-    if (!data || typeof data !== 'object') return;
+  #validateObject(schema, data, path = '') {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return;
 
     const { strict } = this.options;
     const validatedKeys = new Set();
 
-    // required
     if (schema.required && Array.isArray(schema.required)) {
       for (const field of schema.required) {
         if (!(field in data)) {
@@ -183,76 +194,61 @@ export class NativeEngine {
       }
     }
 
-    // properties
     if (schema.properties) {
       for (const [key, propSchema] of Object.entries(schema.properties)) {
         validatedKeys.add(key);
+
         if (key in data) {
           const currentPath = path ? `${path}.${key}` : key;
+
           this.#validateBySchema(propSchema, data[key], currentPath);
         }
       }
     }
 
-    // patternProperties
     if (schema.patternProperties) {
       for (const [pattern, propSchema] of Object.entries(
         schema.patternProperties,
       )) {
         const regex = new RegExp(pattern);
+
         for (const key of Object.keys(data)) {
           if (regex.test(key)) {
             validatedKeys.add(key);
+
             const currentPath = path ? `${path}.${key}` : key;
+
             this.#validateBySchema(propSchema, data[key], currentPath);
           }
         }
       }
     }
 
-    // additionalProperties
-    if (
-      schema.additionalProperties &&
-      typeof schema.additionalProperties === 'object'
-    ) {
-      for (const key of Object.keys(data)) {
-        if (!validatedKeys.has(key)) {
-          const currentPath = path ? `${path}.${key}` : key;
-          this.#validateBySchema(
-            schema.additionalProperties,
-            data[key],
-            currentPath,
-          );
-        }
+    for (const key of Object.keys(data)) {
+      if (validatedKeys.has(key)) continue;
+
+      const currentPath = path ? `${path}.${key}` : key;
+
+      if (schema.additionalProperties === false) {
+        this.errors.push({
+          path: currentPath,
+          message: `Unexpected field '${key}'`,
+        });
+
+        continue;
       }
-    }
 
-    // strict mode
-    if (strict) {
-      for (const key of Object.keys(data)) {
-        if (!validatedKeys.has(key)) {
-          if (
-            schema.patternProperties &&
-            Object.keys(schema.patternProperties).some((pattern) =>
-              new RegExp(pattern).test(key),
-            )
-          ) {
-            continue;
-          }
-
-          if (schema.additionalProperties === true) continue;
-          if (
-            schema.additionalProperties &&
-            typeof schema.additionalProperties === 'object'
-          ) {
-            continue;
-          }
-
-          this.errors.push({
-            path: path ? `${path}.${key}` : key,
-            message: `Unexpected field '${key}'`,
-          });
-        }
+      if (typeof schema.additionalProperties === 'object') {
+        this.#validateBySchema(
+          schema.additionalProperties,
+          data[key],
+          currentPath,
+        );
+      } else if (strict && !schema.additionalProperties) {
+        this.errors.push({
+          path: currentPath,
+          message: `Unexpected field '${key}'`,
+        });
       }
     }
   }
@@ -260,14 +256,18 @@ export class NativeEngine {
   // ==================================================
   // ARRAY
   // ==================================================
+
   #validateArray(schema, data, path) {
     if (!Array.isArray(data)) {
       this.#typeError(path, 'array', data);
       return;
     }
 
+    if (!schema.items) return;
+
     data.forEach((item, index) => {
       const itemPath = `${path}[${index}]`;
+
       this.#validateBySchema(schema.items, item, itemPath);
     });
   }
@@ -275,7 +275,10 @@ export class NativeEngine {
   // ==================================================
   // UNIVERSAL VALIDATOR
   // ==================================================
+
   #validateBySchema(schema, value, path) {
+    if (!schema) return;
+
     if (schema.type && !this.#checkType(value, schema.type)) {
       this.#typeError(path, schema.type, value);
       return;
@@ -283,12 +286,14 @@ export class NativeEngine {
 
     this.#applyCommonRules(value, schema, path);
 
-    if (this.options.recursive) {
-      if (schema.type === 'object') {
-        this.#validateObject(schema, value, path);
-      } else if (schema.type === 'array') {
-        this.#validateArray(schema, value, path);
-      }
+    if (!this.options.recursive) return;
+
+    if (schema.type === 'object') {
+      this.#validateObject(schema, value, path);
+    }
+
+    if (schema.type === 'array') {
+      this.#validateArray(schema, value, path);
     }
   }
 }
