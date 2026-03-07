@@ -1,7 +1,7 @@
 /* eslint camelcase: "off" */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NativeEngine } from '#src';
+import { NativeEngine } from '#lib';
 
 // ================================
 // BASIC TYPES

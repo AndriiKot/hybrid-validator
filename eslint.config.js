@@ -5,7 +5,7 @@ const init = require('eslint-config-metarhia');
 module.exports = [
   ...init,
   {
-    files: ['src/**/*.js', 'tests/**/*.js'],
+    files: ['lib/**/*.js', 'tests/**/*.js'],
     languageOptions: {
       sourceType: 'module',
     },

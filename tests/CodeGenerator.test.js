@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CodeGenerator } from '#src';
+import { CodeGenerator } from '#lib';
 
 test('valid object with fields', () => {
   const schema = {

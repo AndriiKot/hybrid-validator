@@ -2,15 +2,15 @@
   "name": "json-schema-validator",
   "version": "0.2.0",
   "description": "Lightweight JSON Schema validator for Node.js and modern JavaScript environments",
-  "main": "./src/index.js",
+  "main": "./lib/index.js",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "default": "./src/index.js"
+      "import": "./lib/index.js",
+      "default": "./lib/index.js"
     }
   },
   "files": [
-    "src",
+    "lib",
     "README.md",
     "LICENSE"
   ],
@@ -22,7 +22,7 @@
     "prepublishOnly": "npm run lint && npm test"
   },
   "imports": {
-     "#src": "./src/index.js"
+     "#lib": "./lib/index.js"
    },
   "keywords": [
     "json",
