@@ -19,7 +19,11 @@
     "lint": "prettier -c \"**/*.js\" && eslint .",
     "fix": "prettier --write \"**/*.js\" && eslint . --fix",
     "test": "node --test",
-    "prepublishOnly": "npm run lint && npm test"
+    "prepublishOnly": "npm run lint && npm test",
+    "bench": "node benchmarks/internal/native-vs-compiled.bench.mjs",
+    "bench:dataset": "node benchmarks/internal/dataset-size.bench.mjs",
+    "bench:compile": "node benchmarks/internal/compile-cost.bench.mjs",
+    "bench:compare": "node benchmarks/compare/ajv.bench.mjs"
   },
   "imports": {
     "#lib": "./lib/index.js",
