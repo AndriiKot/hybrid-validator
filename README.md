@@ -1,5 +1,5 @@
 
-# JSON Schema Validator
+# Hybrid Validator
 
 High-performance JSON schema validator for Node.js.
 
@@ -28,15 +28,15 @@ This project focuses on **raw validation speed** while still supporting:
 # Installation
 
 ```bash
-npm install json-schema-validator
-````
+npm install hybrid-validator
+```
 
 ---
 
 # Quick Example
 
 ```js
-import { Validator } from "json-schema-validator";
+import { Validator } from "hybrid-validator";
 
 const validator = new Validator();
 
