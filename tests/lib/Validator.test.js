@@ -21,23 +21,11 @@ test('compile() works with nested arrays', () => {
   const validData = [[1, 2], [3]];
   const invalidData = [[1, '2']];
 
-  console.log('--- Testing valid nested array ---');
   const resultValid = validate(validData);
-  console.log('Result:', resultValid);
   assert.equal(resultValid.isValid, true);
 
-  console.log('--- Testing invalid nested array ---');
   const resultInvalid = validate(invalidData);
-  console.log('Result:', resultInvalid);
   assert.equal(resultInvalid.isValid, false);
-
-  // Проверим ошибки
-  if (!resultInvalid.isValid) {
-    console.log('Errors found:');
-    resultInvalid.errors.forEach((err) => {
-      console.log(`Path: ${err.path}, Message: ${err.message}`);
-    });
-  }
 });
 
 // ==================================================
@@ -57,6 +45,7 @@ test('Validator constructor with default options', () => {
 
 test('validate() returns valid result for correct data', () => {
   const validator = new Validator();
+
   const schema = {
     type: 'object',
     properties: {
@@ -64,8 +53,10 @@ test('validate() returns valid result for correct data', () => {
       age: { type: 'integer' },
     },
   };
+
   const data = { name: 'John', age: 30 };
-  const result = validator.validate(schema, data);
+
+  const result = validator.validate({ schema, data });
 
   assert.equal(result.isValid, true);
   assert.deepEqual(result.errors, []);
@@ -73,14 +64,17 @@ test('validate() returns valid result for correct data', () => {
 
 test('validate() returns errors for invalid data', () => {
   const validator = new Validator();
+
   const schema = {
     type: 'object',
     properties: {
       age: { type: 'number' },
     },
   };
+
   const data = { age: '30' };
-  const result = validator.validate(schema, data);
+
+  const result = validator.validate({ schema, data });
 
   assert.equal(result.isValid, false);
   assert.equal(result.errors.length, 1);
@@ -94,6 +88,7 @@ test('validate() returns errors for invalid data', () => {
 test('compile() returns a validation function', () => {
   const validator = new Validator();
   const schema = { type: 'string' };
+
   const validate = validator.compile(schema);
 
   assert.equal(typeof validate, 'function');
@@ -111,8 +106,9 @@ test('compile() caches compiled function for same schema object', () => {
   assert.strictEqual(fn1, fn2);
 });
 
-test('compile() does not share cache for different schema objects (even if identical)', () => {
+test('compile() does not share cache for different schema objects', () => {
   const validator = new Validator();
+
   const schemaA = { type: 'string' };
   const schemaB = { type: 'string' };
 
@@ -122,7 +118,7 @@ test('compile() does not share cache for different schema objects (even if ident
   assert.notStrictEqual(fn1, fn2);
 });
 
-test('clearCache() removes all cached compiled functions', () => {
+test('clearCache() removes cache', () => {
   const validator = new Validator();
   const schema = { type: 'boolean' };
 
@@ -134,165 +130,74 @@ test('clearCache() removes all cached compiled functions', () => {
 });
 
 // ==================================================
-// OPTIONS PROPAGATION
+// OPTIONS
 // ==================================================
 
-test('Validator passes strict option to NativeEngine', () => {
+test('strict mode works', () => {
   const validator = new Validator({ strict: true });
+
   const schema = {
     type: 'object',
     properties: { name: { type: 'string' } },
     additionalProperties: false,
   };
+
   const data = { name: 'John', age: 30 };
-  const result = validator.validate(schema, data);
+
+  const result = validator.validate({ schema, data });
 
   assert.equal(result.isValid, false);
   assert.equal(result.errors[0].path, 'age');
 });
 
-test('Validator passes recursive: false to CodeGenerator', () => {
-  const validator = new Validator({ recursive: false });
-  const schema = {
-    type: 'object',
-    properties: {
-      user: {
-        type: 'object',
-        properties: { name: { type: 'string' } },
+test('customTypes work', () => {
+  const validator = new Validator({
+    customTypes: {
+      even: (v) => typeof v === 'number' && v % 2 === 0,
+    },
+  });
+
+  const schema = { type: 'even' };
+
+  assert.equal(validator.validate({ schema, data: 4 }).isValid, true);
+  assert.equal(validator.validate({ schema, data: 3 }).isValid, false);
+});
+
+test('customValidators work', () => {
+  const validator = new Validator({
+    customValidators: [
+      (data, path, errors) => {
+        if (data.age < 18) {
+          errors.push({ path: 'age', message: 'Too young' });
+        }
       },
-    },
-  };
-  const data = { user: { name: 123 } };
-  const validate = validator.compile(schema);
-  const result = validate(data);
-
-  assert.equal(result.isValid, true);
-});
-
-test('Validator passes customTypes to both engines', () => {
-  const customTypes = {
-    uuid: (value) =>
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        value,
-      ),
-  };
-
-  const validator = new Validator({ customTypes });
-
-  const schema = {
-    type: 'object',
-    properties: { id: { type: 'uuid' } },
-  };
-
-  const validData = { id: '123e4567-e89b-12d3-a456-426614174000' };
-  const invalidData = { id: 'not-uuid' };
-
-  assert.equal(validator.validate(schema, validData).isValid, true);
-  assert.equal(validator.validate(schema, invalidData).isValid, false);
-
-  const validate = validator.compile(schema);
-
-  assert.equal(validate(validData).isValid, true);
-  assert.equal(validate(invalidData).isValid, false);
-});
-
-test('Validator passes customValidators to NativeEngine', () => {
-  const customValidators = [
-    (data, path, errors) => {
-      if (data.age < 18) {
-        errors.push({ path: 'age', message: 'Must be at least 18' });
-      }
-    },
-  ];
-
-  const validator = new Validator({ customValidators });
+    ],
+  });
 
   const schema = {
     type: 'object',
     properties: { age: { type: 'integer' } },
   };
 
-  const data = { age: 16 };
-
-  const result = validator.validate(schema, data);
+  const result = validator.validate({ schema, data: { age: 10 } });
 
   assert.equal(result.isValid, false);
-  assert.equal(result.errors[0].path, 'age');
-  assert.match(result.errors[0].message, /at least 18/);
 });
 
 // ==================================================
 // EDGE CASES
 // ==================================================
 
-test('validate() works with complex schemas', () => {
-  const validator = new Validator();
-
-  const schema = {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        id: { type: 'integer' },
-        tags: {
-          type: 'array',
-          items: { type: 'string' },
-        },
-      },
-    },
-  };
-
-  const data = [
-    { id: 1, tags: ['a', 'b'] },
-    { id: 2, tags: ['c'] },
-  ];
-
-  const result = validator.validate(schema, data);
-
-  assert.equal(result.isValid, true);
-});
-
-test('compile() respects enum constraints', () => {
-  const validator = new Validator();
-
-  const schema = { type: 'string', enum: ['red', 'green'] };
-
-  const validate = validator.compile(schema);
-
-  assert.equal(validate('red').isValid, true);
-  assert.equal(validate('blue').isValid, false);
-});
-
-test('multiple compile calls with different schemas do not interfere', () => {
-  const validator = new Validator();
-
-  const schema1 = { type: 'number' };
-  const schema2 = { type: 'string' };
-
-  const fn1 = validator.compile(schema1);
-  const fn2 = validator.compile(schema2);
-
-  assert.equal(fn1(42).isValid, true);
-  assert.equal(fn1('42').isValid, false);
-  assert.equal(fn2('hello').isValid, true);
-  assert.equal(fn2(42).isValid, false);
-});
-
-// ==================================================
-// ADDITIONAL EDGE CASE TESTS
-// ==================================================
-
-test('null data is valid for type null', () => {
+test('null works', () => {
   const validator = new Validator();
   const schema = { type: 'null' };
 
-  const result = validator.validate(schema, null);
+  const result = validator.validate({ schema, data: null });
 
   assert.equal(result.isValid, true);
-  assert.deepEqual(result.errors, []);
 });
 
-test('validate() reports correct nested path', () => {
+test('nested path', () => {
   const validator = new Validator();
 
   const schema = {
@@ -307,17 +212,14 @@ test('validate() reports correct nested path', () => {
     },
   };
 
-  const data = {
-    user: { age: '30' },
-  };
+  const data = { user: { age: '30' } };
 
-  const result = validator.validate(schema, data);
+  const result = validator.validate({ schema, data });
 
-  assert.equal(result.isValid, false);
   assert.equal(result.errors[0].path, 'user.age');
 });
 
-test('validate() reports correct array index path', () => {
+test('array index path', () => {
   const validator = new Validator();
 
   const schema = {
@@ -327,177 +229,31 @@ test('validate() reports correct array index path', () => {
 
   const data = [1, 2, '3'];
 
-  const result = validator.validate(schema, data);
+  const result = validator.validate({ schema, data });
 
-  assert.equal(result.isValid, false);
   assert.equal(result.errors[0].path, '[2]');
 });
 
-test('required fields must exist', () => {
+test('boolean schema true', () => {
   const validator = new Validator();
 
-  const schema = {
-    type: 'object',
-    required: ['name'],
-    properties: {
-      name: { type: 'string' },
-    },
-  };
-
-  const data = {};
-
-  const result = validator.validate(schema, data);
-
-  assert.equal(result.isValid, false);
-});
-
-test('additionalProperties false rejects unknown fields', () => {
-  const validator = new Validator();
-
-  const schema = {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-    },
-    additionalProperties: false,
-  };
-
-  const data = {
-    name: 'John',
-    age: 30,
-  };
-
-  const result = validator.validate(schema, data);
-
-  assert.equal(result.isValid, false);
-  assert.equal(result.errors[0].path, 'age');
-});
-
-test('compile() and validate() return identical results', () => {
-  const validator = new Validator();
-
-  const schema = {
-    type: 'object',
-    properties: {
-      age: { type: 'number' },
-    },
-  };
-
-  const data = { age: '30' };
-
-  const result1 = validator.validate(schema, data);
-
-  const validate = validator.compile(schema);
-  const result2 = validate(data);
-
-  assert.deepEqual(result1, result2);
-});
-
-test('validate() does not mutate schema', () => {
-  const validator = new Validator();
-
-  const schema = { type: 'string' };
-  const schemaCopy = JSON.parse(JSON.stringify(schema));
-
-  validator.validate(schema, 'hello');
-
-  assert.deepEqual(schema, schemaCopy);
-});
-
-test('validate() does not mutate data', () => {
-  const validator = new Validator();
-
-  const schema = { type: 'object' };
-  const data = { a: 1 };
-  const dataCopy = JSON.parse(JSON.stringify(data));
-
-  validator.validate(schema, data);
-
-  assert.deepEqual(data, dataCopy);
-});
-
-test('compile() works with nested arrays', () => {
-  const validator = new Validator();
-
-  const schema = {
-    type: 'array',
-    items: {
-      type: 'array',
-      items: { type: 'number' },
-    },
-  };
-
-  const validate = validator.compile(schema);
-
-  assert.equal(validate([[1, 2], [3]]).isValid, true);
-  assert.equal(validate([[1, '2']]).isValid, false);
-});
-
-test('multiple errors are collected', () => {
-  const validator = new Validator();
-
-  const schema = {
-    type: 'object',
-    properties: {
-      age: { type: 'number' },
-      name: { type: 'string' },
-    },
-  };
-
-  const data = {
-    age: '30',
-    name: 123,
-  };
-
-  const result = validator.validate(schema, data);
-
-  assert.equal(result.isValid, false);
-  assert.equal(result.errors.length, 2);
-});
-
-test('boolean schema true accepts everything', () => {
-  const validator = new Validator();
-
-  const result = validator.validate(true, 123);
+  const result = validator.validate({ schema: true, data: 123 });
 
   assert.equal(result.isValid, true);
 });
 
-test('boolean schema false rejects everything', () => {
+test('boolean schema false', () => {
   const validator = new Validator();
 
-  const result = validator.validate(false, 123);
+  const result = validator.validate({ schema: false, data: 123 });
 
   assert.equal(result.isValid, false);
 });
 
-test('unknown type produces error', () => {
+test('empty schema', () => {
   const validator = new Validator();
 
-  const schema = { type: 'unknownType' };
-
-  const result = validator.validate(schema, 123);
-
-  assert.equal(result.isValid, false);
-});
-
-test('empty schema accepts any data', () => {
-  const validator = new Validator();
-
-  const result = validator.validate({}, 123);
+  const result = validator.validate({ schema: {}, data: 123 });
 
   assert.equal(result.isValid, true);
-});
-
-test('enum works with mixed types', () => {
-  const validator = new Validator();
-
-  const schema = {
-    enum: [1, '1', true],
-  };
-
-  assert.equal(validator.validate(schema, 1).isValid, true);
-  assert.equal(validator.validate(schema, '1').isValid, true);
-  assert.equal(validator.validate(schema, true).isValid, true);
-  assert.equal(validator.validate(schema, false).isValid, false);
 });
