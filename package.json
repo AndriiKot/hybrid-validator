@@ -37,12 +37,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AndriiKot/json-schema-validator.git"
+    "url": "https://github.com/AndriiKot/hybrid-validator.git"
   },
   "bugs": {
-    "url": "https://github.com/AndriiKot/json-schema-validator/issues"
+    "url": "https://github.com/AndriiKot/hybrid-validator/issues"
   },
-  "homepage": "https://github.com/AndriiKot/json-schema-validator#readme",
+  "homepage": "https://github.com/AndriiKot/hybrid-validator#readme",
   "engines": {
     "node": ">=18"
   },
