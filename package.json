@@ -19,16 +19,11 @@
     "lint": "prettier -c \"**/*.js\" && eslint .",
     "fix": "prettier --write \"**/*.js\" && eslint . --fix",
     "test": "node --test",
-    "prepublishOnly": "npm run lint && npm test",
-    "bench": "node benchmarks/internal/native-vs-compiled.bench.mjs",
-    "bench:dataset": "node benchmarks/internal/dataset-size.bench.mjs",
-    "bench:compile": "node benchmarks/internal/compile-cost.bench.mjs",
-    "bench:compare": "node benchmarks/compare/ajv.bench.mjs"
+    "prepublishOnly": "npm run lint && npm test"
   },
   "imports": {
     "#lib": "./lib/index.js",
-    "#tools": "./tools/index.js",
-    "#benchmarks": "./benchmarks/index.mjs"
+    "#tools": "./tools/index.js"
   },
   "keywords": [
     "json",
@@ -53,13 +48,8 @@
   },
   "private": false,
   "devDependencies": {
-    "ajv": "^8.18.0",
     "eslint": "^9.39.2",
     "eslint-config-metarhia": "^9.1.5",
-    "fastest-validator": "^1.19.1",
-    "prettier": "^3.8.1",
-    "tinybench": "^6.0.0",
-    "yup": "^1.7.1",
-    "zod": "^4.3.6"
+    "prettier": "^3.8.1"
   }
 }
