@@ -53,7 +53,10 @@ const data = {
   age: 30
 };
 
-const result = validator.validate(schema, data);
+const result = validator.validate({
+  schema,
+  data
+});
 
 console.log(result);
 ```
@@ -67,7 +70,7 @@ console.log(result);
 Use when data is validated **only once**.
 
 ```js
-validator.validate(schema, data);
+validator.validate({ schema, data });
 ```
 
 Advantages:
